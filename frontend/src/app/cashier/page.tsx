@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api, type Order, type PaymentMethod } from '@/lib/api';
+import { getSocket, disconnectSocket } from '@/lib/socket';
 
 const paymentLabels: Record<PaymentMethod, string> = { CASH: '💵 Cash', CARD: '💳 Card', UPI: '📱 UPI' };
 const paymentColors: Record<PaymentMethod, string> = {
@@ -34,11 +35,35 @@ export default function CashierPage() {
 
   useEffect(() => {
     if (!token) return;
-    const fetchOrders = () => api.orders.cashier().then(setOrders).catch(() => {});
-    fetchOrders();
-    const interval = setInterval(fetchOrders, 10000);
-    return () => clearInterval(interval);
+
+    api.orders.cashier().then(setOrders).catch(() => {});
+
+    const socket = getSocket();
+    socket.on('order.created', (order: Order) => {
+      if (order.status === 'DELIVERED') setOrders(prev => [order, ...prev]);
+    });
+    socket.on('order.status.updated', (order: Order) => {
+      if (order.status === 'DELIVERED') {
+        setOrders(prev => {
+          const filtered = prev.filter((o: Order) => o.id !== order.id);
+          return [...filtered, order];
+        });
+      } else {
+        setOrders(prev => prev.filter((o: Order) => o.id !== order.id));
+      }
+    });
+    socket.on('order.paid', (order: Order) => {
+      setOrders(prev => prev.filter((o: Order) => o.id !== order.id));
+    });
+
+    return () => {
+      socket.off('order.created');
+      socket.off('order.status.updated');
+      socket.off('order.paid');
+    };
   }, [token]);
+
+  useEffect(() => { if (token === null) disconnectSocket(); }, [token]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

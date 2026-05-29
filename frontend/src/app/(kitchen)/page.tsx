@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { getSocket, disconnectSocket } from '@/lib/socket';
 
 const statusColumns = ['CONFIRMED', 'PREPARING', 'READY'] as const;
 const columnLabels: Record<string, string> = { CONFIRMED: 'NEW', PREPARING: 'PREPARING', READY: 'READY' };
@@ -29,19 +30,49 @@ export default function KitchenPage() {
     if (t) setToken(t);
   }, []);
 
+  // WebSocket + initial fetch
   useEffect(() => {
     if (!token) return;
-    const fetchOrders = () =>
-      api.orders.kitchen().then(setOrders).catch(() => {});
-    fetchOrders();
-    const interval = setInterval(fetchOrders, 10000);
-    return () => clearInterval(interval);
+
+    api.orders.kitchen().then(setOrders).catch(() => {});
+
+    const socket = getSocket();
+    socket.on('order.created', (order: any) => {
+      if (['CONFIRMED', 'PREPARING', 'READY'].includes(order.status)) {
+        setOrders(prev => [order, ...prev]);
+      }
+    });
+    socket.on('order.status.updated', (order: any) => {
+      if (['CONFIRMED', 'PREPARING', 'READY'].includes(order.status)) {
+        setOrders(prev => {
+          const filtered = prev.filter((o: any) => o.id !== order.id);
+          return [...filtered, order];
+        });
+      } else {
+        setOrders(prev => prev.filter((o: any) => o.id !== order.id));
+      }
+    });
+    socket.on('order.paid', (order: any) => {
+      setOrders(prev => prev.filter((o: any) => o.id !== order.id));
+    });
+
+    return () => {
+      socket.off('order.created');
+      socket.off('order.status.updated');
+      socket.off('order.paid');
+    };
   }, [token]);
 
+  // elapsed time re-render
   useEffect(() => {
     if (!token) return;
     const interval = setInterval(() => setOrders((prev: any[]) => [...prev]), 1000);
     return () => clearInterval(interval);
+  }, [token]);
+
+  // disconnect socket on logout
+  useEffect(() => {
+    if (token === null) disconnectSocket();
   }, [token]);
 
   const handleLogin = async (e: React.FormEvent) => {

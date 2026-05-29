@@ -2,10 +2,14 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PayOrderDto } from './dto/pay-order.dto';
+import { OrdersGateway } from './orders.gateway';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private gateway: OrdersGateway,
+  ) {}
 
   async create(dto: CreateOrderDto, userId?: string) {
     const menuItemIds = dto.items.map(i => i.menuItemId);
@@ -49,6 +53,7 @@ export class OrdersService {
       },
     });
 
+    this.gateway.emitOrderCreated(order);
     return order;
   }
 
@@ -117,7 +122,7 @@ export class OrdersService {
       throw new BadRequestException('Order must be in DELIVERED status to process payment');
     }
 
-    return this.prisma.order.update({
+    const paid = await this.prisma.order.update({
       where: { id },
       data: {
         status: 'PAID',
@@ -130,6 +135,9 @@ export class OrdersService {
         },
       },
     });
+
+    this.gateway.emitOrderPaid(paid);
+    return paid;
   }
 
   async findKitchenOrders() {
@@ -156,7 +164,7 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
-    return this.prisma.order.update({
+    const updated = await this.prisma.order.update({
       where: { id },
       data: { status: status as any },
       include: {
@@ -165,6 +173,9 @@ export class OrdersService {
         },
       },
     });
+
+    this.gateway.emitOrderStatusUpdated(updated);
+    return updated;
   }
 
   private async generateOrderNumber(): Promise<string> {

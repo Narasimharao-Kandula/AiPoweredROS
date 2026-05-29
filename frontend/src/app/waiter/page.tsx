@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api, type Category, type MenuItem, type Order } from '@/lib/api';
+import { getSocket, disconnectSocket } from '@/lib/socket';
 
 const TOTAL_TABLES = 20;
 const statusColor: Record<string, string> = {
@@ -44,10 +45,32 @@ export default function WaiterPage() {
 
   useEffect(() => {
     if (!token) return;
-    const fetchOrders = () => api.orders.waiter().then(setOrders).catch(() => {});
-    fetchOrders();
-    const interval = setInterval(fetchOrders, 10000);
-    return () => clearInterval(interval);
+
+    api.orders.waiter().then(setOrders).catch(() => {});
+
+    const socket = getSocket();
+    socket.on('order.created', (order: Order) => {
+      if (order.tableNumber) setOrders(prev => [order, ...prev]);
+    });
+    socket.on('order.status.updated', (order: Order) => {
+      if (order.tableNumber && ['CONFIRMED', 'PREPARING', 'READY', 'DELIVERED', 'PENDING'].includes(order.status)) {
+        setOrders(prev => {
+          const filtered = prev.filter((o: Order) => o.id !== order.id);
+          return [...filtered, order];
+        });
+      } else {
+        setOrders(prev => prev.filter((o: Order) => o.id !== order.id));
+      }
+    });
+    socket.on('order.paid', (order: Order) => {
+      setOrders(prev => prev.filter((o: Order) => o.id !== order.id));
+    });
+
+    return () => {
+      socket.off('order.created');
+      socket.off('order.status.updated');
+      socket.off('order.paid');
+    };
   }, [token]);
 
   useEffect(() => {
@@ -62,6 +85,8 @@ export default function WaiterPage() {
     if (!activeCategory) return;
     api.menu.items(activeCategory).then(setItems).catch(() => {});
   }, [activeCategory]);
+
+  useEffect(() => { if (token === null) disconnectSocket(); }, [token]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
