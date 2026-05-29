@@ -151,4 +151,12 @@ export const api = {
         body: JSON.stringify({ email, password }),
       }),
   },
+  payments: {
+    createCheckoutSession: (orderId: string) =>
+      fetchAPI<{ url: string; sessionId: string }>('/payments/create-checkout-session', {
+        method: 'POST',
+        body: JSON.stringify({ orderId }),
+        headers: authHeaders(),
+      }),
+  },
 };

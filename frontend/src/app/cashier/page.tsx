@@ -27,10 +27,18 @@ export default function CashierPage() {
   const [selected, setSelected] = useState<Order | null>(null);
   const [paidOrder, setPaidOrder] = useState<Order | null>(null);
   const [search, setSearch] = useState('');
+  const [payOnlineLoading, setPayOnlineLoading] = useState<string | null>(null);
 
   useEffect(() => {
     const t = sessionStorage.getItem('token');
     if (t) setToken(t);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('paid=1')) {
+      setPaidOrder({ orderNumber: 'Online Payment', totalAmount: 0, paymentMethod: 'CARD', paidAt: new Date().toISOString() } as Order);
+      window.history.replaceState({}, '', '/cashier');
+    }
   }, []);
 
   useEffect(() => {
@@ -85,6 +93,17 @@ export default function CashierPage() {
       setSelected(null);
       setOrders(prev => prev.filter(o => o.id !== selected.id));
     } catch {}
+  };
+
+  const handlePayOnline = async () => {
+    if (!selected) return;
+    setPayOnlineLoading(selected.id);
+    try {
+      const { url } = await api.payments.createCheckoutSession(selected.id);
+      window.location.href = url;
+    } catch {
+      setPayOnlineLoading(null);
+    }
   };
 
   const filtered = orders.filter(o => {
@@ -209,12 +228,15 @@ export default function CashierPage() {
               {/* Payment buttons */}
               <div>
                 <p className="text-sm text-gray-400 mb-3">Select payment method</p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {(Object.entries(paymentLabels) as [PaymentMethod, string][]).map(([method, label]) => (
                     <button key={method} onClick={() => handlePay(method)} className={`${paymentColors[method]} text-white py-3 rounded-lg font-medium transition`}>
                       {label}
                     </button>
                   ))}
+                  <button onClick={handlePayOnline} disabled={!!payOnlineLoading} className="bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium transition disabled:opacity-50">
+                    {payOnlineLoading === selected?.id ? 'Redirecting...' : '🌐 Pay Online'}
+                  </button>
                 </div>
               </div>
             </div>

@@ -6,11 +6,11 @@ export class CreateUserDto {
   @ApiProperty({ example: 'Jane Waiter' })
   @IsString()
   @MinLength(2)
-  name: string;
+  name!: string;
 
   @ApiProperty({ example: 'jane@restaurant.com' })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: '+1234567890', required: false })
   @IsOptional()
@@ -20,9 +20,9 @@ export class CreateUserDto {
   @ApiProperty({ example: 'password123' })
   @IsString()
   @MinLength(6)
-  password: string;
+  password!: string;
 
   @ApiProperty({ enum: Role, example: Role.WAITER })
   @IsEnum(Role)
-  role: Role;
+  role!: Role;
 }

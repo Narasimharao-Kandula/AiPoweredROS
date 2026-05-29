@@ -5,7 +5,7 @@ export class CreateCategoryDto {
   @ApiProperty({ example: 'Beverages' })
   @IsString()
   @MinLength(2)
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({ example: 'Cold drinks, juices, and shakes' })
   @IsOptional()

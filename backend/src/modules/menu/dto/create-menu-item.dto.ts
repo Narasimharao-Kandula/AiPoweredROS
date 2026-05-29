@@ -6,7 +6,7 @@ export class CreateMenuItemDto {
   @ApiProperty({ example: 'Mango Smoothie' })
   @IsString()
   @MinLength(2)
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({ example: 'Fresh mango blended with cream' })
   @IsOptional()
@@ -17,7 +17,7 @@ export class CreateMenuItemDto {
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  price: number;
+  price!: number;
 
   @ApiPropertyOptional({ example: 'https://example.com/mango.jpg' })
   @IsOptional()
@@ -26,5 +26,5 @@ export class CreateMenuItemDto {
 
   @ApiProperty({ example: 'uuid-of-category' })
   @IsUUID()
-  categoryId: string;
+  categoryId!: string;
 }

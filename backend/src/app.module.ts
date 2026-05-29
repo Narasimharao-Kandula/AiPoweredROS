@@ -7,6 +7,7 @@ import { UsersModule } from './modules/users/users.module';
 import { MenuModule } from './modules/menu/menu.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AdminModule } from './modules/admin/admin.module';
     MenuModule,
     OrdersModule,
     AdminModule,
+    PaymentsModule,
   ],
   providers: [
     {
