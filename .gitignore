@@ -3,10 +3,11 @@ dist/
 .next/
 __pycache__/
 *.pyc
-.env
 *.log
 .DS_Store
 *.pkl
 
-# Prisma
+# Environment files
+.env
+!backend/.env
 backend/prisma/.env
