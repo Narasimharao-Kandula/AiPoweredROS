@@ -31,7 +31,28 @@ export interface MenuItem {
   category: Category;
 }
 
+export type Role = 'CUSTOMER' | 'WAITER' | 'CHEF' | 'CASHIER' | 'MANAGER' | 'DELIVERY';
 export type PaymentMethod = 'CASH' | 'CARD' | 'UPI';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: Role;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface DashboardData {
+  totalOrdersToday: number;
+  revenueToday: number;
+  activeTableCount: number;
+  totalUsers: number;
+  totalMenuItems: number;
+  ordersByStatus: { status: string; count: number }[];
+  recentOrders: Order[];
+}
 
 export interface Order {
   id: string;
@@ -62,10 +83,39 @@ function authHeaders(): HeadersInit {
 }
 
 export const api = {
+  admin: {
+    dashboard: () =>
+      fetchAPI<DashboardData>('/admin/dashboard', { headers: authHeaders() }),
+  },
+  users: {
+    list: () =>
+      fetchAPI<User[]>('/users', { headers: authHeaders() }),
+    get: (id: string) =>
+      fetchAPI<User>(`/users/${id}`, { headers: authHeaders() }),
+    create: (data: { name: string; email: string; password: string; phone?: string; role: Role }) =>
+      fetchAPI<User>('/users', { method: 'POST', body: JSON.stringify(data), headers: authHeaders() }),
+    update: (id: string, data: { name?: string; email?: string; password?: string; phone?: string; role?: Role }) =>
+      fetchAPI<User>(`/users/${id}`, { method: 'PATCH', body: JSON.stringify(data), headers: authHeaders() }),
+    remove: (id: string) =>
+      fetchAPI<User>(`/users/${id}`, { method: 'DELETE', headers: authHeaders() }),
+  },
   menu: {
-    categories: () => fetchAPI<Category[]>('/menu/categories'),
+    categories: () =>
+      fetchAPI<Category[]>('/menu/categories'),
+    createCategory: (data: { name: string; description?: string }) =>
+      fetchAPI<Category>('/menu/categories', { method: 'POST', body: JSON.stringify(data), headers: authHeaders() }),
+    updateCategory: (id: string, data: { name?: string; description?: string }) =>
+      fetchAPI<Category>(`/menu/categories/${id}`, { method: 'PATCH', body: JSON.stringify(data), headers: authHeaders() }),
+    deleteCategory: (id: string) =>
+      fetchAPI<void>(`/menu/categories/${id}`, { method: 'DELETE', headers: authHeaders() }),
     items: (categoryId?: string) =>
       fetchAPI<MenuItem[]>(`/menu/items${categoryId ? `?categoryId=${categoryId}` : ''}`),
+    createItem: (data: { name: string; description?: string; price: number; categoryId: string }) =>
+      fetchAPI<MenuItem>('/menu/items', { method: 'POST', body: JSON.stringify(data), headers: authHeaders() }),
+    updateItem: (id: string, data: { name?: string; description?: string; price?: number; isAvailable?: boolean; categoryId?: string }) =>
+      fetchAPI<MenuItem>(`/menu/items/${id}`, { method: 'PATCH', body: JSON.stringify(data), headers: authHeaders() }),
+    deleteItem: (id: string) =>
+      fetchAPI<void>(`/menu/items/${id}`, { method: 'DELETE', headers: authHeaders() }),
   },
   orders: {
     create: (data: { items: { menuItemId: string; quantity: number }[]; tableNumber?: number }) =>
