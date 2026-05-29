@@ -79,6 +79,41 @@ export class OrdersService {
     return order;
   }
 
+  async findKitchenOrders() {
+    return this.prisma.order.findMany({
+      where: {
+        status: { in: ['CONFIRMED', 'PREPARING', 'READY'] },
+      },
+      include: {
+        orderItems: {
+          include: { menuItem: true },
+        },
+      },
+      orderBy: [
+        { status: 'asc' },
+        { createdAt: 'asc' },
+      ],
+    });
+  }
+
+  async updateStatus(id: string, status: string) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    return this.prisma.order.update({
+      where: { id },
+      data: { status: status as any },
+      include: {
+        orderItems: {
+          include: { menuItem: true },
+        },
+      },
+    });
+  }
+
   private async generateOrderNumber(): Promise<string> {
     const count = await this.prisma.order.count();
     const date = new Date();

@@ -49,6 +49,12 @@ export interface OrderItem {
   menuItem: MenuItem;
 }
 
+function authHeaders(): HeadersInit {
+  if (typeof window === 'undefined') return {};
+  const token = sessionStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export const api = {
   menu: {
     categories: () => fetchAPI<Category[]>('/menu/categories'),
@@ -57,8 +63,26 @@ export const api = {
   },
   orders: {
     create: (data: { items: { menuItemId: string; quantity: number }[] }) =>
-      fetchAPI<Order>('/orders', { method: 'POST', body: JSON.stringify(data) }),
-    mine: () => fetchAPI<Order[]>('/orders/mine'),
+      fetchAPI<Order>('/orders', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: authHeaders(),
+      }),
+    mine: () =>
+      fetchAPI<Order[]>('/orders/mine', { headers: authHeaders() }),
     byNumber: (orderNumber: string) => fetchAPI<Order>(`/orders/${orderNumber}`),
+    kitchen: () =>
+      fetchAPI<Order[]>('/orders/kitchen', { headers: authHeaders() }),
+    updateStatus: (id: string, status: string) =>
+      fetchAPI<Order>(`/orders/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+        headers: authHeaders(),
+      }),
+    login: (email: string, password: string) =>
+      fetchAPI<{ user: any; accessToken: string }>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      }),
   },
 };

@@ -1,8 +1,12 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Orders')
@@ -17,11 +21,27 @@ export class OrdersController {
     return this.orders.create(dto, userId);
   }
 
+  @Get('kitchen')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CHEF, Role.MANAGER)
+  @ApiBearerAuth()
+  findKitchen() {
+    return this.orders.findKitchenOrders();
+  }
+
   @Get('mine')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   findMine(@CurrentUser('id') userId: string) {
     return this.orders.findByUser(userId);
+  }
+
+  @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CHEF, Role.MANAGER)
+  @ApiBearerAuth()
+  updateStatus(@Param('id') id: string, @Body() dto: UpdateOrderStatusDto) {
+    return this.orders.updateStatus(id, dto.status);
   }
 
   @Get(':orderNumber')
