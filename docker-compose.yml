@@ -19,6 +19,16 @@ services:
     ports:
       - "6380:6379"
 
+  ai-service:
+    build: ./ai-service
+    container_name: ros-ai-service
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_started
+
   backend:
     build: ./backend
     container_name: ros-backend

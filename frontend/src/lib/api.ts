@@ -97,6 +97,33 @@ export interface OrderItem {
   menuItem: MenuItem;
 }
 
+export interface AiPrediction {
+  menu_item_id: string;
+  name: string;
+  predicted_quantity: number;
+  confidence: number;
+}
+
+export interface AiPeakHour {
+  hour: number;
+  predicted_orders: number;
+}
+
+export interface AiRevenuePrediction {
+  predicted_today_revenue: number;
+  current_today_orders: number;
+  average_daily_revenue: number;
+}
+
+export interface AiRecommendation {
+  menu_item_id: string;
+  name: string;
+  category: string;
+  price: number;
+  score: number;
+  reason: string;
+}
+
 function authHeaders(): HeadersInit {
   if (typeof window === 'undefined') return {};
   const token = sessionStorage.getItem('token');
@@ -199,5 +226,15 @@ export const api = {
         body: JSON.stringify({ orderId }),
         headers: authHeaders(),
       }),
+  },
+  ai: {
+    demand: () =>
+      fetchAPI<AiPrediction[]>('/ai/demand', { headers: authHeaders() }),
+    peakHours: () =>
+      fetchAPI<AiPeakHour[]>('/ai/peak-hours', { headers: authHeaders() }),
+    revenue: () =>
+      fetchAPI<AiRevenuePrediction>('/ai/revenue', { headers: authHeaders() }),
+    popular: () =>
+      fetchAPI<AiRecommendation[]>('/ai/popular', { headers: authHeaders() }),
   },
 };

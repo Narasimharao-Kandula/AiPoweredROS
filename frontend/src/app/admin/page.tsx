@@ -1,15 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { api, type DashboardData, type User, type Category, type MenuItem, type Order, type Role } from '@/lib/api';
+import { api, type DashboardData, type User, type Category, type MenuItem, type Order, type Role, type AiPrediction, type AiPeakHour, type AiRevenuePrediction, type AiRecommendation } from '@/lib/api';
 
-type Tab = 'dashboard' | 'users' | 'menu' | 'orders';
+type Tab = 'dashboard' | 'users' | 'menu' | 'orders' | 'ai';
 
 const tabs: { key: Tab; label: string }[] = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'users', label: 'Users' },
   { key: 'menu', label: 'Menu' },
   { key: 'orders', label: 'Orders' },
+  { key: 'ai', label: 'AI Insights' },
 ];
 
 const roles: Role[] = ['CUSTOMER', 'WAITER', 'CHEF', 'CASHIER', 'MANAGER', 'DELIVERY'];
@@ -49,6 +50,12 @@ export default function AdminPage() {
   // orders
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [orderFilter, setOrderFilter] = useState('');
+
+  // ai insights
+  const [demand, setDemand] = useState<AiPrediction[]>([]);
+  const [peakHours, setPeakHours] = useState<AiPeakHour[]>([]);
+  const [revenuePrediction, setRevenuePrediction] = useState<AiRevenuePrediction | null>(null);
+  const [popularItems, setPopularItems] = useState<AiRecommendation[]>([]);
 
   useEffect(() => {
     const t = sessionStorage.getItem('token');
@@ -97,6 +104,22 @@ export default function AdminPage() {
         return true;
       }));
     });
+  }, [token, tab]);
+
+  // fetch ai insights
+  useEffect(() => {
+    if (!token || tab !== 'ai') return;
+    Promise.all([
+      api.ai.demand(),
+      api.ai.peakHours(),
+      api.ai.revenue(),
+      api.ai.popular(),
+    ]).then(([d, p, r, pop]) => {
+      setDemand(d);
+      setPeakHours(p);
+      setRevenuePrediction(r);
+      setPopularItems(pop);
+    }).catch(() => {});
   }, [token, tab]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -487,6 +510,115 @@ export default function AdminPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* ===== AI INSIGHTS TAB ===== */}
+        {tab === 'ai' && (
+          <div>
+            {/* Revenue prediction */}
+            {revenuePrediction && (
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                <div className="bg-gray-800 rounded-xl p-4">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide">Predicted Today Revenue</p>
+                  <p className="text-3xl font-bold mt-1 text-green-400">₹{revenuePrediction.predicted_today_revenue.toFixed(2)}</p>
+                </div>
+                <div className="bg-gray-800 rounded-xl p-4">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide">Current Today Orders</p>
+                  <p className="text-3xl font-bold mt-1">{revenuePrediction.current_today_orders}</p>
+                </div>
+                <div className="bg-gray-800 rounded-xl p-4">
+                  <p className="text-xs text-gray-400 uppercase tracking-wide">Avg Daily Revenue</p>
+                  <p className="text-3xl font-bold mt-1 text-blue-400">₹{revenuePrediction.average_daily_revenue.toFixed(2)}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Demand prediction */}
+              <div className="bg-gray-800 rounded-xl p-4">
+                <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-3">Demand Prediction (Today)</h3>
+                <div className="space-y-3">
+                  {demand.length === 0 && <p className="text-sm text-gray-500">No data yet. Start serving orders!</p>}
+                  {demand.map(item => (
+                    <div key={item.menu_item_id} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <span>{item.name}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${item.confidence > 0.7 ? 'bg-green-900 text-green-300' : item.confidence > 0.4 ? 'bg-yellow-900 text-yellow-300' : 'bg-gray-700 text-gray-400'}`}>
+                          {Math.round(item.confidence * 100)}%
+                        </span>
+                      </div>
+                      <span className="font-medium">{item.predicted_quantity} orders</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Peak hours */}
+              <div className="bg-gray-800 rounded-xl p-4">
+                <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-3">Peak Hours</h3>
+                <div className="space-y-2">
+                  {peakHours.length === 0 && <p className="text-sm text-gray-500">No data yet.</p>}
+                  {peakHours.map(ph => (
+                    <div key={ph.hour} className="flex items-center gap-3 text-sm">
+                      <span className="w-16 text-right font-medium">{ph.hour.toString().padStart(2, '0')}:00</span>
+                      <div className="flex-1 bg-gray-700 rounded-full h-3">
+                        <div className="bg-[var(--primary)] h-3 rounded-full" style={{ width: `${Math.min(100, (ph.predicted_orders / Math.max(...peakHours.map(x => x.predicted_orders), 1)) * 100)}%` }} />
+                      </div>
+                      <span className="w-10 text-right text-gray-400">{ph.predicted_orders}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Popular items */}
+              <div className="bg-gray-800 rounded-xl p-4">
+                <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-3">Popular Items</h3>
+                <div className="space-y-3">
+                  {popularItems.length === 0 && <p className="text-sm text-gray-500">No data yet.</p>}
+                  {popularItems.map((item, i) => (
+                    <div key={item.menu_item_id} className="flex items-center justify-between text-sm bg-gray-700/50 rounded-lg p-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i === 0 ? 'bg-yellow-500 text-black' : i === 1 ? 'bg-gray-400 text-black' : i === 2 ? 'bg-amber-700 text-white' : 'bg-gray-700 text-gray-300'}`}>
+                          {i + 1}
+                        </span>
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-xs text-gray-400">{item.category}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-green-400">₹{item.price.toFixed(2)}</p>
+                        <p className="text-xs text-gray-500">{item.reason}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Confidence distribution */}
+              <div className="bg-gray-800 rounded-xl p-4">
+                <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide mb-3">Prediction Confidence</h3>
+                {demand.length > 0 ? (
+                  <div className="flex items-end gap-2 h-40">
+                    {demand.slice(0, 8).map(item => (
+                      <div key={item.menu_item_id} className="flex-1 flex flex-col items-center gap-1">
+                        <div
+                          className="w-full rounded-t"
+                          style={{
+                            height: `${Math.max(10, item.confidence * 100)}%`,
+                            backgroundColor: item.confidence > 0.7 ? '#22c55e' : item.confidence > 0.4 ? '#eab308' : '#6b7280',
+                          }}
+                        />
+                        <span className="text-[10px] text-gray-400 truncate w-full text-center">{item.name.split(' ')[0]}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No data yet.</p>
+                )}
+              </div>
             </div>
           </div>
         )}
