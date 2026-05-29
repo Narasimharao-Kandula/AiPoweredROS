@@ -5,6 +5,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { MenuModule } from './modules/menu/menu.module';
+import { OrdersModule } from './modules/orders/orders.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { MenuModule } from './modules/menu/menu.module';
     AuthModule,
     UsersModule,
     MenuModule,
+    OrdersModule,
   ],
   providers: [
     {
