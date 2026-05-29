@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { PayOrderDto } from './dto/pay-order.dto';
 
 @Injectable()
 export class OrdersService {
@@ -93,6 +94,42 @@ export class OrdersService {
     }
 
     return order;
+  }
+
+  async findCashierOrders() {
+    return this.prisma.order.findMany({
+      where: {
+        status: 'DELIVERED',
+      },
+      include: {
+        orderItems: {
+          include: { menuItem: true },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  async payOrder(id: string, dto: PayOrderDto) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.status !== 'DELIVERED') {
+      throw new BadRequestException('Order must be in DELIVERED status to process payment');
+    }
+
+    return this.prisma.order.update({
+      where: { id },
+      data: {
+        status: 'PAID',
+        paymentMethod: dto.paymentMethod,
+        paidAt: new Date(),
+      },
+      include: {
+        orderItems: {
+          include: { menuItem: true },
+        },
+      },
+    });
   }
 
   async findKitchenOrders() {

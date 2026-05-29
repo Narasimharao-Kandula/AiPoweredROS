@@ -4,6 +4,7 @@ import { Role } from '@prisma/client';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { PayOrderDto } from './dto/pay-order.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -27,6 +28,22 @@ export class OrdersController {
   @ApiBearerAuth()
   findWaiter() {
     return this.orders.findWaiterOrders();
+  }
+
+  @Get('cashier')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CASHIER, Role.MANAGER)
+  @ApiBearerAuth()
+  findCashier() {
+    return this.orders.findCashierOrders();
+  }
+
+  @Patch(':id/pay')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CASHIER, Role.MANAGER)
+  @ApiBearerAuth()
+  pay(@Param('id') id: string, @Body() dto: PayOrderDto) {
+    return this.orders.payOrder(id, dto);
   }
 
   @Get('kitchen')

@@ -31,14 +31,19 @@ export interface MenuItem {
   category: Category;
 }
 
+export type PaymentMethod = 'CASH' | 'CARD' | 'UPI';
+
 export interface Order {
   id: string;
   orderNumber: string;
   userId: string | null;
   tableNumber: number | null;
-  status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED';
+  status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'PAID' | 'CANCELLED';
   totalAmount: number;
+  paymentMethod: PaymentMethod | null;
+  paidAt: string | null;
   createdAt: string;
+  updatedAt: string;
   orderItems: OrderItem[];
 }
 
@@ -72,6 +77,14 @@ export const api = {
     mine: () =>
       fetchAPI<Order[]>('/orders/mine', { headers: authHeaders() }),
     byNumber: (orderNumber: string) => fetchAPI<Order>(`/orders/${orderNumber}`),
+    cashier: () =>
+      fetchAPI<Order[]>('/orders/cashier', { headers: authHeaders() }),
+    pay: (id: string, paymentMethod: PaymentMethod) =>
+      fetchAPI<Order>(`/orders/${id}/pay`, {
+        method: 'PATCH',
+        body: JSON.stringify({ paymentMethod }),
+        headers: authHeaders(),
+      }),
     kitchen: () =>
       fetchAPI<Order[]>('/orders/kitchen', { headers: authHeaders() }),
     waiter: () =>
