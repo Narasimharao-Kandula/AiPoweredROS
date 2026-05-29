@@ -1,28 +1,27 @@
-import psycopg2
-import psycopg2.extras
+import pg8000.native as pg
 from config import settings
 
 
-def get_connection():
-    return psycopg2.connect(settings.database_url)
+def _connect():
+    return pg.Connection(
+        user="admin",
+        password="admin123",
+        host="localhost",
+        port=5433,
+        database="restaurant_os",
+    )
 
 
 def query(sql: str, params: tuple = ()) -> list[dict]:
-    conn = get_connection()
+    conn = _connect()
     try:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, params)
-            return [dict(row) for row in cur.fetchall()]
+        rows = conn.run(sql, params)
+        columns = [c["name"] for c in conn.columns] if conn.columns else []
+        return [dict(zip(columns, row)) for row in rows]
     finally:
         conn.close()
 
 
 def query_one(sql: str, params: tuple = ()) -> dict | None:
-    conn = get_connection()
-    try:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, params)
-            row = cur.fetchone()
-            return dict(row) if row else None
-    finally:
-        conn.close()
+    rows = query(sql, params)
+    return rows[0] if rows else None

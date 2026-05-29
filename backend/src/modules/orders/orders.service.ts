@@ -45,6 +45,7 @@ export class OrdersService {
         orderNumber,
         userId: userId || null,
         tableNumber: dto.tableNumber || null,
+        deliveryAddress: dto.deliveryAddress || null,
         totalAmount,
         orderItems: { create: orderItemsData },
       },

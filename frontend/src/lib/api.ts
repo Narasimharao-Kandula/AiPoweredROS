@@ -80,10 +80,12 @@ export interface Order {
   orderNumber: string;
   userId: string | null;
   tableNumber: number | null;
-  status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'PAID' | 'CANCELLED';
+  status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'PICKED_UP' | 'DELIVERED' | 'PAID' | 'CANCELLED';
   totalAmount: number;
   paymentMethod: PaymentMethod | null;
   paidAt: string | null;
+  deliveryAddress: string | null;
+  deliveryPersonId: string | null;
   createdAt: string;
   updatedAt: string;
   orderItems: OrderItem[];
@@ -236,5 +238,15 @@ export const api = {
       fetchAPI<AiRevenuePrediction>('/ai/revenue', { headers: authHeaders() }),
     popular: () =>
       fetchAPI<AiRecommendation[]>('/ai/popular', { headers: authHeaders() }),
+  },
+  delivery: {
+    mine: () =>
+      fetchAPI<Order[]>('/delivery', { headers: authHeaders() }),
+    pickup: (id: string) =>
+      fetchAPI<Order>(`/delivery/${id}/pickup`, { method: 'PATCH', headers: authHeaders() }),
+    deliver: (id: string) =>
+      fetchAPI<Order>(`/delivery/${id}/deliver`, { method: 'PATCH', headers: authHeaders() }),
+    assign: (id: string, deliveryPersonId: string) =>
+      fetchAPI<Order>(`/delivery/${id}/assign`, { method: 'PATCH', body: JSON.stringify({ deliveryPersonId }), headers: authHeaders() }),
   },
 };

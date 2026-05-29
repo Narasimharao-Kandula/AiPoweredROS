@@ -28,4 +28,8 @@ export class CreateOrderDto {
   @IsInt()
   @Min(1)
   tableNumber?: number;
+
+  @ApiPropertyOptional({ example: '123 Main St, Apt 4B' })
+  @IsOptional()
+  deliveryAddress?: string;
 }

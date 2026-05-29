@@ -21,6 +21,7 @@ enum OrderStatus {
   CONFIRMED
   PREPARING
   READY
+  PICKED_UP
   DELIVERED
   PAID
   CANCELLED
@@ -44,6 +45,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   orders        Order[]
+  deliveryOrders Order[] @relation("DeliveryAssignments")
   notifications Notification[]
 
   @@map("users")
@@ -89,6 +91,9 @@ model Order {
   totalAmount    Decimal         @default(0) @db.Decimal(10, 2)
   paymentMethod  PaymentMethod?
   paidAt         DateTime?
+  deliveryPersonId String?
+  deliveryPerson   User?          @relation("DeliveryAssignments", fields: [deliveryPersonId], references: [id])
+  deliveryAddress  String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 

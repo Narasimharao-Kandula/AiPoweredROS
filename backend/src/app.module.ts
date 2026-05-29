@@ -11,6 +11,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AiModule } from './modules/ai/ai.module';
+import { DeliveryModule } from './modules/delivery/delivery.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AiModule } from './modules/ai/ai.module';
     InventoryModule,
     NotificationsModule,
     AiModule,
+    DeliveryModule,
   ],
   providers: [
     {
