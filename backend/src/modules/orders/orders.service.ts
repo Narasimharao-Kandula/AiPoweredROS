@@ -3,12 +3,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PayOrderDto } from './dto/pay-order.dto';
 import { OrdersGateway } from './orders.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private gateway: OrdersGateway,
+    private notifications: NotificationsService,
   ) {}
 
   async create(dto: CreateOrderDto, userId?: string) {
@@ -54,6 +56,21 @@ export class OrdersService {
     });
 
     this.gateway.emitOrderCreated(order);
+
+    this.notifications.create({
+      userId: order.userId || undefined,
+      title: 'Order Placed',
+      message: `Order ${order.orderNumber} has been placed successfully.`,
+      type: 'ORDER_CONFIRMED',
+    });
+    if (order.tableNumber) {
+      this.notifications.create({
+        title: 'New Order',
+        message: `New order ${order.orderNumber} for Table ${order.tableNumber}.`,
+        type: 'ORDER_CONFIRMED',
+      });
+    }
+
     return order;
   }
 
@@ -175,6 +192,23 @@ export class OrdersService {
     });
 
     this.gateway.emitOrderStatusUpdated(updated);
+
+    if (status === 'READY') {
+      this.notifications.create({
+        userId: updated.userId || undefined,
+        title: 'Order Ready',
+        message: `Order ${updated.orderNumber} is ready to serve.`,
+        type: 'ORDER_READY',
+      });
+      if (updated.tableNumber) {
+        this.notifications.create({
+          title: 'Order Ready',
+          message: `Order ${updated.orderNumber} for Table ${updated.tableNumber} is ready.`,
+          type: 'ORDER_READY',
+        });
+      }
+    }
+
     return updated;
   }
 

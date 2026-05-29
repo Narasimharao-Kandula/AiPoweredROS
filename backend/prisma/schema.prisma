@@ -43,7 +43,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  orders Order[]
+  orders        Order[]
+  notifications Notification[]
 
   @@map("users")
 }
@@ -135,4 +136,19 @@ model RecipeIngredient {
   inventory InventoryItem @relation(fields: [inventoryId], references: [id])
 
   @@map("recipe_ingredients")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String?
+  title     String
+  message   String
+  type      String
+  channel   String   @default("IN_APP")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
 }

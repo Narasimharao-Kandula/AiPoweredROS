@@ -44,6 +44,17 @@ export interface User {
   createdAt: string;
 }
 
+export interface Notification {
+  id: string;
+  userId: string | null;
+  title: string;
+  message: string;
+  type: string;
+  channel: string;
+  read: boolean;
+  createdAt: string;
+}
+
 export interface InventoryItem {
   id: string;
   name: string;
@@ -160,6 +171,16 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       }),
+  },
+  notifications: {
+    list: () =>
+      fetchAPI<Notification[]>('/notifications', { headers: authHeaders() }),
+    unreadCount: () =>
+      fetchAPI<number>('/notifications/unread-count', { headers: authHeaders() }),
+    markRead: (id: string) =>
+      fetchAPI<Notification>(`/notifications/${id}/read`, { method: 'PATCH', headers: authHeaders() }),
+    markAllRead: () =>
+      fetchAPI<void>('/notifications/mark-all-read', { method: 'POST', headers: authHeaders() }),
   },
   inventory: {
     list: () =>

@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OrdersGateway } from '../orders/orders.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PaymentsService {
@@ -10,6 +11,7 @@ export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     private gateway: OrdersGateway,
+    private notifications: NotificationsService,
   ) {
     const key = process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder';
     this.stripe = new Stripe(key, { apiVersion: '2025-03-31-basil' as any });
@@ -70,6 +72,14 @@ export class PaymentsService {
     });
 
     this.gateway.emitOrderPaid(paid);
+
+    this.notifications.create({
+      userId: paid.userId || undefined,
+      title: 'Payment Received',
+      message: `Payment of ₹${Number(paid.totalAmount).toFixed(2)} for ${paid.orderNumber} received.`,
+      type: 'PAYMENT_RECEIVED',
+    });
+
     return paid;
   }
 }
