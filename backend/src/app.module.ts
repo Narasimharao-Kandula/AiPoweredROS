@@ -8,6 +8,7 @@ import { MenuModule } from './modules/menu/menu.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     OrdersModule,
     AdminModule,
     PaymentsModule,
+    InventoryModule,
   ],
   providers: [
     {

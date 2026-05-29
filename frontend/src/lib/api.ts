@@ -44,6 +44,16 @@ export interface User {
   createdAt: string;
 }
 
+export interface InventoryItem {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  minStock: number;
+  isLowStock: boolean;
+  createdAt: string;
+}
+
 export interface DashboardData {
   totalOrdersToday: number;
   revenueToday: number;
@@ -150,6 +160,16 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       }),
+  },
+  inventory: {
+    list: () =>
+      fetchAPI<InventoryItem[]>('/inventory', { headers: authHeaders() }),
+    create: (data: { name: string; quantity: number; unit: string; minStock?: number }) =>
+      fetchAPI<InventoryItem>('/inventory', { method: 'POST', body: JSON.stringify(data), headers: authHeaders() }),
+    update: (id: string, data: { name?: string; quantity?: number; unit?: string; minStock?: number }) =>
+      fetchAPI<InventoryItem>(`/inventory/${id}`, { method: 'PATCH', body: JSON.stringify(data), headers: authHeaders() }),
+    remove: (id: string) =>
+      fetchAPI<void>(`/inventory/${id}`, { method: 'DELETE', headers: authHeaders() }),
   },
   payments: {
     createCheckoutSession: (orderId: string) =>
