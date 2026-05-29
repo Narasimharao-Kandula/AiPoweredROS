@@ -4,7 +4,7 @@ services:
     container_name: ros-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
@@ -17,7 +17,20 @@ services:
     container_name: ros-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"
+
+  backend:
+    build: ./backend
+    container_name: ros-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    env_file: .env
 
 volumes:
   pgdata:
