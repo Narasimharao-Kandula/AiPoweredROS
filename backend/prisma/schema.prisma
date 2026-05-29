@@ -75,6 +75,7 @@ model Order {
   id          String      @id @default(uuid())
   orderNumber String      @unique
   userId      String?
+  tableNumber Int?
   status      OrderStatus @default(PENDING)
   totalAmount Decimal     @default(0) @db.Decimal(10, 2)
   createdAt   DateTime    @default(now())

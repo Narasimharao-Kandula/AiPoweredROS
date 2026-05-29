@@ -37,6 +37,7 @@ export class OrdersService {
       data: {
         orderNumber,
         userId: userId || null,
+        tableNumber: dto.tableNumber || null,
         totalAmount,
         orderItems: { create: orderItemsData },
       },
@@ -48,6 +49,21 @@ export class OrdersService {
     });
 
     return order;
+  }
+
+  async findWaiterOrders() {
+    return this.prisma.order.findMany({
+      where: {
+        status: { in: ['CONFIRMED', 'PREPARING', 'READY', 'PENDING'] },
+        tableNumber: { not: null },
+      },
+      include: {
+        orderItems: {
+          include: { menuItem: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   async findByUser(userId: string) {

@@ -35,6 +35,7 @@ export interface Order {
   id: string;
   orderNumber: string;
   userId: string | null;
+  tableNumber: number | null;
   status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED';
   totalAmount: number;
   createdAt: string;
@@ -62,7 +63,7 @@ export const api = {
       fetchAPI<MenuItem[]>(`/menu/items${categoryId ? `?categoryId=${categoryId}` : ''}`),
   },
   orders: {
-    create: (data: { items: { menuItemId: string; quantity: number }[] }) =>
+    create: (data: { items: { menuItemId: string; quantity: number }[]; tableNumber?: number }) =>
       fetchAPI<Order>('/orders', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -73,6 +74,8 @@ export const api = {
     byNumber: (orderNumber: string) => fetchAPI<Order>(`/orders/${orderNumber}`),
     kitchen: () =>
       fetchAPI<Order[]>('/orders/kitchen', { headers: authHeaders() }),
+    waiter: () =>
+      fetchAPI<Order[]>('/orders/waiter', { headers: authHeaders() }),
     updateStatus: (id: string, status: string) =>
       fetchAPI<Order>(`/orders/${id}/status`, {
         method: 'PATCH',

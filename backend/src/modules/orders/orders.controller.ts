@@ -21,6 +21,14 @@ export class OrdersController {
     return this.orders.create(dto, userId);
   }
 
+  @Get('waiter')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.WAITER, Role.MANAGER)
+  @ApiBearerAuth()
+  findWaiter() {
+    return this.orders.findWaiterOrders();
+  }
+
   @Get('kitchen')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CHEF, Role.MANAGER)
@@ -38,7 +46,7 @@ export class OrdersController {
 
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.CHEF, Role.MANAGER)
+  @Roles(Role.CHEF, Role.WAITER, Role.MANAGER)
   @ApiBearerAuth()
   updateStatus(@Param('id') id: string, @Body() dto: UpdateOrderStatusDto) {
     return this.orders.updateStatus(id, dto.status);
